@@ -5,7 +5,8 @@ author 'Emma & Ludaro'
 shared_script('shared.lua');
 
 server_scripts({
-    'server/*.lua'
+    'server/*.lua',
+    '@oxmysql/lib/MySQL.lua'
 });
 
 client_scripts({
