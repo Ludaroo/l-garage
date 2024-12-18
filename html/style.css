@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.garage-container {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 400px;
+}
+
+.vehicle-card {
+    background-color: #444;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    text-align: left;
+}
+
+button {
+    background-color: #007BFF;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}

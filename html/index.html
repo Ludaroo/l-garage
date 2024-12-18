@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>l-garage</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div v-if="showGarage" class="garage-container">
+            <h1>Garage</h1>
+            <div v-if="vehicles.length > 0">
+                <div v-for="vehicle in vehicles" :key="vehicle.plate" class="vehicle-card">
+                    <p><strong>Plate:</strong> {{ vehicle.plate }}</p>
+                    <button @click="spawnVehicle(vehicle.vehicleProps)">Spawn</button>
+                </div>
+            </div>
+            <div v-else>
+                <p>No vehicles</p>
+            </div>
+            <button @click="closeGarage">Close</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
