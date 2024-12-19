@@ -6,30 +6,71 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
+    animation: fadeIn 1s ease-out;
 }
 
 .garage-container {
     background-color: #333;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 30px;
+    border-radius: 12px;
     text-align: center;
     width: 400px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transform: translateY(30px);
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .vehicle-card {
     background-color: #444;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 8px;
     text-align: left;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.vehicle-card:hover {
+    background-color: #555;
+    transform: scale(1.05);
 }
 
 button {
     background-color: #007BFF;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     color: white;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+button:active {
+    transform: scale(1);
 }
