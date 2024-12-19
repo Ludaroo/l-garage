@@ -18,7 +18,7 @@ client_scripts({
 });
 
 dependencies {
-    'ox-lib',
+    'ox_lib',
     'oxmysql',
     'es_extended'
 }
