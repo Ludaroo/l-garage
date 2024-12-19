@@ -5,9 +5,9 @@ function DebugPrint(...)
     local currentfunction = debug.getinfo(2).name
     for k,v in pairs(args) do
         if type(v) == "table" then
-            str = DumpTable(v) .. "|"
+            str = DumpTable(v) .. " |"
         else
-            str = tostring(v) .. "|"
+            str = tostring(v) .. " |"
         end
     end
     lib.print.debug(str, line, currentfunction)
@@ -20,9 +20,9 @@ function InfoPrint(...)
     local currentfunction = debug.getinfo(2).name
     for k,v in pairs(args) do
         if type(v) == "table" then
-            str = DumpTable(v) .. "|"
+            str = DumpTable(v) .. " |"
         else
-            str = tostring(v) .. "|"
+            str = tostring(v) .. " |"
         end
     end
     lib.print.info(str, line, currentfunction)
@@ -35,9 +35,9 @@ function WarnPrint(...)
     local currentfunction = debug.getinfo(2).name
     for k,v in pairs(args) do
         if type(v) == "table" then
-            str = DumpTable(v) .. "|"
+            str = DumpTable(v) .. " |"
         else
-            str = tostring(v) .. "|"
+            str = tostring(v) .. " |"
         end
     end
     lib.print.warn(str, line, currentfunction)
@@ -51,9 +51,9 @@ function VerbosePrint(...)
     local currentfunction = debug.getinfo(2).name
     for k,v in pairs(args) do
         if type(v) == "table" then
-            str = DumpTable(v) .. "|"
+            str = DumpTable(v) .. " |"
         else
-            str = tostring(v) .. "|"
+            str = tostring(v) .. " |"
         end
     end
     lib.print.verbose(str, line, currentfunction)

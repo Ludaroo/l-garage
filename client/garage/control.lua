@@ -7,3 +7,8 @@ function garage_control_handleControl(self)
     end
 
 end
+
+function garage_public_openGarage(self)
+    InfoPrint("Opening Garage")
+    
+end
