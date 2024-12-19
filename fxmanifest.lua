@@ -2,18 +2,23 @@ fx_version('cerulean')
 games({ 'gta5' })
 author 'Emma & Ludaro'
 
-shared_script('shared.lua');
+shared_scripts {
+    '@ox_lib/init.lua',
+    'shared/**/*',
+    'config/**/*',
 
+}
 server_scripts({
-    'server/*.lua',
+    'server/**/*',
     '@oxmysql/lib/MySQL.lua'
 });
 
 client_scripts({
-    'client/*.lua'
+    'client/**/*'
 });
 
 dependencies {
+    'ox-lib',
     'oxmysql',
     'es_extended'
 }
