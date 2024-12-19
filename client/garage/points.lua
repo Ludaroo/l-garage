@@ -22,6 +22,7 @@ function nearby(self)
     if self.data.marker then
     garage_markers_drawMarker(self)
     end
+    handleControl
 end
 
 function createPoints(Garages)
