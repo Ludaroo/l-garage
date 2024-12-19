@@ -1,7 +1,7 @@
 fx_version('cerulean')
 games({ 'gta5' })
 author 'Emma & Ludaro'
-
+lua54("yes")
 shared_scripts {
     '@ox_lib/init.lua',
     'shared/**/*',

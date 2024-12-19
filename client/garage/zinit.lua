@@ -1,0 +1,1 @@
+createPoints(Garages)

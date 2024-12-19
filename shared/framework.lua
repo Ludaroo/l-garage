@@ -7,9 +7,7 @@ function framework_initFramework()
         end
     end
 
-    if exports["qb-core"] and epxorts["qb-core"].GetCoreObject then
-        QBCore = exports["qb-core"]:GetCoreObject()
-    end
+   -- qbox and qb here
 end
 
 framework_initFramework()

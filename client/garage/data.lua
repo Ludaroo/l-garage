@@ -1,5 +1,5 @@
 function WaitForGarageData()
-    while not Garage do
+    while not Garages do
         Wait(100)
         -- function to check if the garage data is loaded from the server     
     end
