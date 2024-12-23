@@ -8,7 +8,6 @@ function garage_npcs_createNPC(self)
     lib.requestModel(model, timeout)
 
     if npcdata.onground then
-       
         local foundGround, groundZ = GetGroundZFor_3dCoord(npcdata.coords.x, npcdata.coords.y, npcdata.coords.z, true)
         if foundGround then
             propercoordsz = groundZ
@@ -22,6 +21,9 @@ function garage_npcs_createNPC(self)
     SetPedCombatAttributes(npc, 17, 1)
     SetPedCombatAttributes(npc, 46, 1)
     SetEntityInvincible(npc, true)
+    Wait(500)
+    FreezeEntityPosition(npc, true)
+
 
     NPCS[self] = npc
 end

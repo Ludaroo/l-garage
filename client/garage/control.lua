@@ -7,3 +7,16 @@ function garage_control_handleControl(self)
     end
 
 end
+
+function garage_public_openGarage(self)
+    InfoPrint("Opening Garage")
+    SetNuiFocus(true, true)
+    SendNUIMessage({action = 'open'})
+end
+
+
+RegisterNUICallback("close", function(data, cb)
+    InfoPrint("Closing Garage")
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
