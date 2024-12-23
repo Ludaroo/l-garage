@@ -7,7 +7,11 @@ function framework_initFramework()
         end
     end
 
-   -- qbox and qb here
+    if (GetResourceState("qb-core") == "started") then
+        if (exports["qb-core"] and exports["qb-core"].GetCoreObject) then
+            QBCore = exports["qb-core"]:GetCoreObject()
+        end
+    end
 end
 
 framework_initFramework()
