@@ -1,14 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import Config from './components/Config.vue'; 
+import PublicGarage from './components/PublicGarage.vue'; 
 
 const displayUI = {
-  config: ref(false),
+  publicgarage: ref(false),
 };
 
 
 if (process.env.NODE_ENV === 'development') {
-  displayUI.config.value = true;
+  displayUI.publicgarage.value = true;
 }
 
 
@@ -17,8 +17,8 @@ onMounted(() => {
    // console.log(event.data.type)
     if (event.data.type != null) {
       if (displayUI[event.data.type] !== undefined & displayUI[event.data.type].value !== undefined) {
-        //console.log(event.data.display)
-          displayUI[event.data.type].value = event.data.display;
+        console.log(event.data.type)
+          displayUI[event.data.type].value = event.data.type;
       }
     }
   });
@@ -26,6 +26,5 @@ onMounted(() => {
 </script>
 
 <template>
-  
-  <Config v-if="displayUI.config.value"></Config> 
+  <PublicGarage v-if="displayUI.publicgarage.value"/> 
 </template>

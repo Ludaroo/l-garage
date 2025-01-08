@@ -2,10 +2,6 @@
 import { ref, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
-import Camera from "./configsites/Camera.vue";
-import Locations from "./configsites/Locations.vue";
-import ConfigIndex from "./configsites/ConfigIndex.vue";
-import Settings from "./configsites/Settings.vue";
 // Locale setup
 const { t, locale } = useI18n();
 

@@ -23,15 +23,10 @@ dependencies {
     'es_extended'
 }
 
-ui_page 'html/index.html'
-
-
 ui_page({
-	'html/dist/index.html',
+	"html/dist/index.html",
 })
 
 files({
-	'locales/*.json',
-	'html/dist/**',
-	'config.json',
+	"html/dist/**",
 })
