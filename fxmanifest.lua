@@ -29,6 +29,7 @@ ui_page({
 })
 
 files({
+    'data.lua',
 	"html/dist/**",
 })
 

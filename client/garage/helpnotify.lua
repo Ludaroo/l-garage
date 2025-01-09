@@ -1,5 +1,13 @@
-function garage_helpNotifythread(marker)
-    DrawHelpNotifythread("test")
+function garage_helpNotifythread(data)
+    coords = data.coords
+
+    distance = #(coords - GetEntityCoords(PlayerPedId()))
+    data.helpnotification.distance = data.helpnotification.distance or 1.5
+    if distance < data.helpnotification.distance then 
+        DrawHelpNotifythread("test")
+    end
+    
+  
 end
 
 function DrawHelpNotifythread(msg)
