@@ -2,7 +2,11 @@ function garage_helpNotifythread(data)
     coords = data.coords
 
     distance = #(coords - GetEntityCoords(PlayerPedId()))
-    data.helpnotification.distance = data.helpnotification.distance or 1.5
+
+    if not data.helpnotification then
+        data.helpnotification = {text = "Press ~INPUT_CONTEXT~ to open the garage", distance = 1.5}
+    end
+    
     if distance < data.helpnotification.distance then 
         DrawHelpNotifythread("test")
     end
