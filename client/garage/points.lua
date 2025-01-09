@@ -15,7 +15,7 @@ function onExit(self)
 end
 
 function nearby(self)
-    garage_helpNotifythread(self)
+    garage_helpNotifyThread(self)
     if self.data.marker then
         garage_markers_drawMarker(self)
     end
