@@ -15,8 +15,5 @@ function garage_public_openGarage(self)
 end
 
 
-RegisterNUICallback("close", function(data, cb)
-    InfoPrint("Closing Garage")
-    SetNuiFocus(false, false)
-    cb("ok")
-end)
+
+-- TTODO: maybe add ox-lib addkeybinds here later? https://overextended.dev/ox_lib/Modules/AddKeybind/Client#ckeybind-class
