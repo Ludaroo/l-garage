@@ -1,3 +1,4 @@
+
 function garage_control_handleControl(self)
 
     if IsControlJustPressed(0, self.data.control) then
@@ -9,9 +10,11 @@ function garage_control_handleControl(self)
 end
 
 function garage_public_openGarage(self)
-    InfoPrint("Opening Garage")
-    SetNuiFocus(true, true)
-    SendNUIMessage({action = 'open'})
+
+   if self.data.ipl ~= nil or self.data.ipl ~= "" then
+    teleportToIPL(self.data.ipl)
+    end
+  
 end
 
 
