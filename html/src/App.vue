@@ -1,30 +1,41 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import PublicGarage from './components/PublicGarage.vue'; 
+import { ref, onMounted, onUnmounted } from 'vue';
 
-const displayUI = {
-  publicgarage: ref(false),
+// Reactive state for visibility
+const display = ref(false);
+
+// Event handler to toggle visibility
+const toggleDisplay = (value) => {
+  display.value = value;
 };
 
-
-if (process.env.NODE_ENV === 'development') {
-  displayUI.publicgarage.value = true;
-}
-
-
+// Add event listener when the component is mounted and remove it when unmounted
 onMounted(() => {
   window.addEventListener('message', (event) => {
-   // console.log(event.data.type)
-    if (event.data.type != null) {
-      if (displayUI[event.data.type] !== undefined & displayUI[event.data.type].value !== undefined) {
-        console.log(event.data.type)
-          displayUI[event.data.type].value = event.data.type;
-      }
+    console.log("what")
+    if (event.data.type === 'toggle-triangle') {
+      console.log(event.data.display)
+      toggleDisplay(event.data.display);
     }
   });
 });
+
+
 </script>
 
 <template>
-  <PublicGarage v-if="displayUI.publicgarage.value"/> 
+  <div>
+    <!-- Triangle visibility toggles based on 'display' -->
+    <div 
+      v-if="display" 
+      style="
+        width: 0;
+        height: 0;
+        border-left: 50px solid transparent;
+        border-right: 50px solid transparent;
+        border-bottom: 100px solid red;
+        background: transparent;
+      ">
+    </div>
+  </div>
 </template>

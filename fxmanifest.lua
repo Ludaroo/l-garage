@@ -20,7 +20,8 @@ client_scripts({
 dependencies {
     'ox_lib',
     'oxmysql',
-    'es_extended'
+    'es_extended',
+    'bob74_ipl'
 }
 
 ui_page({
@@ -30,3 +31,4 @@ ui_page({
 files({
 	"html/dist/**",
 })
+

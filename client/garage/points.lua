@@ -1,3 +1,4 @@
+Garages = require 'data'
 WaitForGarageData()
 
 function onEnter(self)
