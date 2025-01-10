@@ -7,11 +7,20 @@ local vehiclesInIPL = {}
 local isCameraActive = true -- Tracks if the camera is currently active
 local controlsDisabled = false -- Tracks if controls are disabled
 
+--[[
+    Loads the specified IPL and executes its code.
+    @param ipl: The name of the IPL to load.
+]]
 function loadIPL(ipl)
     RequestIpl(ipl)
     data.IPLS[ipl].code()
 end
 
+--[[
+    Starts the camera for the specified IPL and vehicles.
+    @param ipl: The name of the IPL.
+    @param vehicles: A table of vehicles in the IPL.
+]]
 function startIPLCamera(ipl, vehicles)
     -- Load the IPL before starting the camera
     loadIPL(ipl)
@@ -73,6 +82,9 @@ function startIPLCamera(ipl, vehicles)
     end)
 end
 
+--[[
+    Ends the IPL camera and resets the camera state.
+]]
 function endIPLCamera()
     if IPLCamera then
         SetCamActive(IPLCamera, false)
@@ -88,6 +100,9 @@ function endIPLCamera()
     end
 end
 
+--[[
+    Toggles the camera on or off.
+]]
 function toggleCamera()
     if IPLCamera then
         isCameraActive = not isCameraActive
@@ -101,6 +116,10 @@ function toggleCamera()
     end
 end
 
+--[[
+    Navigates between vehicles in the IPL.
+    @param direction: The direction to navigate (-1 for previous, 1 for next).
+]]
 function navigateVehicles(direction)
     currentVehicleIndex = currentVehicleIndex + direction
     if currentVehicleIndex < 1 then
@@ -111,6 +130,10 @@ function navigateVehicles(direction)
     focusOnVehicle(vehiclesInIPL[currentVehicleIndex])
 end
 
+--[[
+    Focuses the camera on a specific vehicle.
+    @param vehicle: The vehicle to focus the camera on.
+]]
 function focusOnVehicle(vehicle)
     local vehicleCoords = GetEntityCoords(vehicle)
     local minDim, maxDim = GetModelDimensions(GetEntityModel(vehicle))
@@ -132,6 +155,12 @@ function focusOnVehicle(vehicle)
     end)
 end
 
+--[[
+    Smoothly transitions the camera to a new position.
+    @param cam: The camera to transition.
+    @param toPosition: The target position for the camera.
+    @param lookAtPosition: The point the camera should focus on.
+]]
 function smoothTransition(cam, toPosition, lookAtPosition)
     local startTime = GetGameTimer()
     local fromPosition = GetCamCoord(cam)
@@ -146,6 +175,11 @@ function smoothTransition(cam, toPosition, lookAtPosition)
     end
 end
 
+--[[
+    Finds a suitable camera space by performing a raycast.
+    @param coords: The starting coordinates for the raycast.
+    @return: The coordinates where the camera can be placed.
+]]
 function getCameraSpace(coords)
     -- Raycast to find a suitable camera space
     local raycast = StartShapeTestRay(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z + 100, 1, PlayerPedId(), 0)
@@ -156,7 +190,10 @@ function getCameraSpace(coords)
     return coords + vector3(0, 0, 5.0)
 end
 
--- Disable/Enable all controls
+--[[
+    Enables or disables all controls.
+    @param disable: Boolean indicating whether to disable or enable controls.
+]]
 function disableControls(disable)
     controlsDisabled = disable
     DisplayRadar(not disable)
@@ -169,11 +206,17 @@ function disableControls(disable)
     end
 end
 
--- Draw instructions above the vehicles (placeholder for now)
+--[[
+    Draws instructions above the vehicles (currently a placeholder).
+]]
 function drawInstructions()
     -- Add logic to draw above vehicles dynamically if needed.
 end
 
+--[[
+    Handles vehicle selection when Enter is pressed.
+    @param vehicle: The selected vehicle.
+]]
 function selectVehicle(vehicle)
     -- Logic when a vehicle is selected
     print("Vehicle selected: " .. tostring(vehicle))

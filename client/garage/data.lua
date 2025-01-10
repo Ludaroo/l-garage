@@ -9,7 +9,7 @@ function RefreshGarageData()
     -- ESX.TriggerServerCallback('l-garage:getGarages', function(garages)
     --     Garage = garages
     -- end)
-    -- example for later
+    -- example for later but we us ox-lib callbacks. because they are better
 end
 
 function GetGarageData()

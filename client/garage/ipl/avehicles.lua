@@ -1,3 +1,8 @@
+--[[
+    Module to handle vehicle management in IPLs (Interior Proxy Locations).
+    Provides functions to manage vehicles, calculate available slots, and handle vehicle creation and deletion.
+]]
+
 local data = require "data"
 
 -- Global tables to store vehicles and slot information
@@ -5,16 +10,27 @@ VehiclesInIPL = {}
 SlotsInIPL = {}
 SlotsCount = {}
 
--- Initialize global table for vehicles
+--[[
+    Initializes or retrieves the global vehicle table for a given IPL name.
+    If the table doesn't exist, it is created.
+
+    @param name: The name of the IPL to get or create the vehicle table for.
+    @return: The global vehicle table for the specified IPL.
+]]
 function getVehiclesGlobalTable(name)
-    -- Check if global table exists, if not create it
     if not VehiclesInIPL[name] then
         VehiclesInIPL[name] = {}
     end
     return VehiclesInIPL[name]
 end
 
--- Function to wait for vehicles to be created with a timeout
+--[[
+    Waits for vehicles to be created in an IPL, with a timeout.
+    
+    @param name: The name of the IPL to check.
+    @param timeout: The timeout in milliseconds.
+    @return: true if vehicles were created, false if the timeout was reached.
+]]
 function waitForVehiclesCreation(name, timeout)
     local startTime = GetGameTimer()
     while not VehiclesInIPL[name] and GetGameTimer() - startTime < timeout do
@@ -23,7 +39,13 @@ function waitForVehiclesCreation(name, timeout)
     return VehiclesInIPL[name] and true or false
 end
 
--- Function to calculate the number of slots in an IPL
+--[[
+    Calculates the number of slots in an IPL, including handling PolyZone-based and single-vehicle slot types.
+
+    @param name: The name of the IPL to calculate slots for.
+    @param ipl: The IPL identifier to get vehicle data from.
+    @return: The number of slots available in the IPL.
+]]
 function calculateSlotsInIPL(name, ipl)
     if not SlotsCount[name] then
         local iplData = data.IPLS[ipl]
@@ -31,6 +53,7 @@ function calculateSlotsInIPL(name, ipl)
             local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
             local maxVehicles = iplData.vehicles.max
             local isPolyzone = iplData.vehicles.poly ~= nil
+
             if isPolyzone then
                 -- Handle PolyZone calculations
                 local direction = normalizeVector(vector3(polyzonePoints[#polyzonePoints].x - polyzonePoints[1].x,
@@ -41,7 +64,6 @@ function calculateSlotsInIPL(name, ipl)
 
                 -- Store the number of slots in SlotsCount
                 SlotsCount[name] = maxVehicles
-                print("Calculated slots for IPL " .. name .. ": " .. SlotsCount[name])
 
                 -- Initialize SlotsInIPL[name] if it doesn't exist
                 if not SlotsInIPL[name] then
@@ -76,7 +98,12 @@ function calculateSlotsInIPL(name, ipl)
     return SlotsCount[name]
 end
 
--- Function to create vehicles in an IPL with margin distance
+--[[
+    Creates vehicles in an IPL, with optional margin distance between vehicles.
+
+    @param name: The name of the IPL to create vehicles in.
+    @param ipl: The IPL identifier containing the vehicle data.
+]]
 function createVehiclesInIPL(name, ipl)
     if data.debug then
         local iplData = data.IPLS[ipl]
@@ -140,7 +167,11 @@ function createVehiclesInIPL(name, ipl)
     end
 end
 
--- Function to delete all vehicles in an IPL
+--[[
+    Deletes all vehicles in an IPL, freeing up the associated slots.
+
+    @param name: The name of the IPL to delete vehicles from.
+]]
 function deleteVehiclesInIPL(name)
     if VehiclesInIPL[name] then
         for _, v in ipairs(VehiclesInIPL[name]) do
@@ -160,7 +191,12 @@ function deleteVehiclesInIPL(name)
     end
 end
 
--- Function to update slot occupation status
+--[[
+    Updates the occupation status of each slot in an IPL.
+    This checks whether a vehicle is occupying each slot.
+
+    @param name: The name of the IPL to update slot occupation for.
+]]
 function updateSlotOccupation(name)
     local slots = getSlotsInIPL(name)
 
@@ -182,11 +218,13 @@ function updateSlotOccupation(name)
     end
 end
 
--- Monitor and update slot occupation
+--[[
+    Monitors and updates slot occupation status every second.
+]]
 Citizen.CreateThread(function()
     while true do
         for name, _ in pairs(SlotsInIPL) do
-            updateSlotOccupation(name) -- Update slot status
+            updateSlotOccupation(name)
         end
         Citizen.Wait(1000)
     end
