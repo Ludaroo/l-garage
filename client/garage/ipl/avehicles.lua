@@ -23,23 +23,6 @@ function waitForVehiclesCreation(name, timeout)
     return VehiclesInIPL[name] and true or false
 end
 
-function vectorDistance(vec1, vec2)
-    return #(vec1 - vec2)
-end
-
--- Helper function to normalize a vector
-function normalizeVector(vec)
-    local length = math.sqrt(vec.x^2 + vec.y^2 + vec.z^2)
-    if length == 0 then
-        return vector3(0, 0, 0)
-    end
-    return vector3(vec.x / length, vec.y / length, vec.z / length)
-end
-
-function vectorLength(vec)
-    return math.sqrt(vec.x^2 + vec.y^2 + vec.z^2)
-end
-
 -- Function to calculate the number of slots in an IPL
 function calculateSlotsInIPL(name, ipl)
     if not SlotsCount[name] then
@@ -47,7 +30,8 @@ function calculateSlotsInIPL(name, ipl)
         if iplData and iplData.vehicles then
             local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
             local maxVehicles = iplData.vehicles.max
-            if polyzonePoints then
+            local isPolyzone = iplData.vehicles.poly ~= nil
+            if isPolyzone then
                 -- Handle PolyZone calculations
                 local direction = normalizeVector(vector3(polyzonePoints[#polyzonePoints].x - polyzonePoints[1].x,
                                                           polyzonePoints[#polyzonePoints].y - polyzonePoints[1].y,
@@ -73,7 +57,7 @@ function calculateSlotsInIPL(name, ipl)
                     table.insert(SlotsInIPL[name], { position = position, isSlotFilled = isSlotFilled })
                 end
             else
-                -- Handle single vehicle slot
+                -- Handle single vehicle slots
                 local vehicles = iplData.vehicles
                 if vehicles then
                     SlotsCount[name] = #vehicles
@@ -101,9 +85,10 @@ function createVehiclesInIPL(name, ipl)
             local heading = iplData.vehicles.heading
             local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
             local margin = iplData.vehicles.margin or 0
-            local distanceBetweenVehicles = iplData.vehicles.DistanceBetweenVehicles or 5
+            local distanceBetweenVehicles = iplData.vehicles.DistanceBetweenVehicles or 5.0
+            local isPolyzone = iplData.vehicles.poly ~= nil
 
-            if polyzonePoints then
+            if isPolyzone then
                 -- Create the PolyZone and handle vehicle creation inside the PolyZone
                 local startPoint = vector3(polyzonePoints[1].x, polyzonePoints[1].y, polyzonePoints[1].z)
                 local endPoint = vector3(polyzonePoints[#polyzonePoints].x, polyzonePoints[#polyzonePoints].y, polyzonePoints[#polyzonePoints].z)
@@ -148,7 +133,7 @@ function createVehiclesInIPL(name, ipl)
                 end
             end
         else
-            print("No vehicle data found for IPL: " .. name)
+            print("Debug mode is disabled; no vehicles created.")
         end
     else
         print("Debug mode is disabled; no vehicles created.")
