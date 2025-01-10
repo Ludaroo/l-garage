@@ -1,125 +1,193 @@
-Data = {}
-Data.debug = true
-Data.Garages = {
-    ["Mission Row"] = {
-        control = 38,
-        coords = vector4(214.0199, -808.6150, 31.0149, 69.4439),
-        npc = {
-            model = "s_m_y_cop_01",
-            coords = vector4(213.6358, -809.9702, 31.0149, 354.2460),
-            onground = true
-        },
-        marker = {
-            coords = vector4(214.0199, -808.6150, 31.0149, 69.4439),
-            color = {
-                r = 0,
-                g = 0,
-                b = 255,
-                a = 100
-            },
-            scale = vector3(1.0, 1.0, 1.0),
-            type = 1
-        },
-        blip = {
-            coords = vector4(223.0, -810.0, 30.0, 180.0),
-            color = 38,
-            scale = 0.8,
-            name = "Mission Row Garage"
-        },
-        helpnotification = {
-            text = "Press ~INPUT_CONTEXT~ to open the garage",
-            distance = 1.5
-        },
-        type = "public",
-        vehtype = "car",
-        distance = 10.0,
-        ipl = "import1"
-    }
-} -- this will later be in a config.json that can be edited ingame, no config.lua required yk? but for now its debugdata
+local data = require "data"
 
-Data.IPLS = {
-    ["import1"] = {
-        code = function()
-            CreateThread(function()
-                print("huh")
-                -- Getting the object to interact with
-                ImportCEOGarage1 = exports['bob74_ipl']:GetImportCEOGarage1Object()
+-- Global tables to store vehicles and slot information
+VehiclesInIPL = {}
+SlotsInIPL = {}
+SlotsCount = {}
 
-                -- Loading Garage 2
-                ImportCEOGarage1.Part.Clear() -- Removing all garages
-                ImportCEOGarage1.Part.Load(ImportCEOGarage1.Part.Garage2) -- Loading only Garage 2
+-- Initialize global table for vehicles
+function getVehiclesGlobalTable(name)
+    -- Check if global table exists, if not create it
+    if not VehiclesInIPL[name] then
+        VehiclesInIPL[name] = {}
+    end
+    return VehiclesInIPL[name]
+end
 
-                -- Setting the garage's style
-                ImportCEOGarage1.Style.Set(ImportCEOGarage1.Part.Garage2, ImportCEOGarage1.Style.plain)
+-- Function to wait for vehicles to be created with a timeout
+function waitForVehiclesCreation(name, timeout)
+    local startTime = GetGameTimer()
+    while not VehiclesInIPL[name] and GetGameTimer() - startTime < timeout do
+        Citizen.Wait(100)
+    end
+    return VehiclesInIPL[name] and true or false
+end
 
-                -- Numbering style
-                ImportCEOGarage1.Numbering.Set(ImportCEOGarage1.Part.Garage2, ImportCEOGarage1.Numbering.Level1.style5)
+-- Function to calculate the number of slots in an IPL
+function calculateSlotsInIPL(name, ipl)
+    if not SlotsCount[name] then
+        local iplData = data.IPLS[ipl]
+        if iplData and iplData.vehicles then
+            local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
+            local maxVehicles = iplData.vehicles.max
+            local isPolyzone = iplData.vehicles.poly ~= nil
+            if isPolyzone then
+                -- Handle PolyZone calculations
+                local direction = normalizeVector(vector3(polyzonePoints[#polyzonePoints].x - polyzonePoints[1].x,
+                                                          polyzonePoints[#polyzonePoints].y - polyzonePoints[1].y,
+                                                          polyzonePoints[#polyzonePoints].z - polyzonePoints[1].z))
+                local totalDistance = vectorLength(polyzonePoints[#polyzonePoints] - polyzonePoints[1])
+                local spacing = totalDistance / (maxVehicles - 1)
 
-                -- Lighting style + Refresh
-                ImportCEOGarage1.Lighting.Set(ImportCEOGarage1.Part.Garage2, ImportCEOGarage1.Lighting.style3, true)
+                -- Store the number of slots in SlotsCount
+                SlotsCount[name] = maxVehicles
+                print("Calculated slots for IPL " .. name .. ": " .. SlotsCount[name])
 
-                -- Enabling ModShop
-                ImportCEOGarage1.Part.Load(ImportCEOGarage1.Part.ModShop)
-                -- with a custom floor + Refresh
-                ImportCEOGarage1.ModShop.Floor.Set(ImportCEOGarage1.ModShop.Floor.seabed, true)
-            end)
-        end,
+                -- Initialize SlotsInIPL[name] if it doesn't exist
+                if not SlotsInIPL[name] then
+                    SlotsInIPL[name] = {}
+                end
 
-        coords = {
-            exit = vector3(-191.0133, -579.1428, 135.0000),
-            entrance = vector3(-191, -579, 135)
-        },
-        vehicles = {
-            [1] = {
-                coords = vector4(-179.7688, -571.4345, 135.5887, 159.0597),
-                type = "car"
-            },
-            [2] = {
-                coords = vector4(-185.2332, -572.1675, 136.0005, 190.4247),
-                type = "car"
-            },
-            [3] = {
-                coords = vector4(-172.5018, -575.9543, 136.0005, 132.9360),
-                type = "car"
-            }
-        }
-    },
-    ["eclipseboulevard"] = {
-        code = function()
-            Citizen.CreateThread(function()
-                -- Getting the object to interact with
-                DrugWarsGarage = exports['bob74_ipl']:GetDrugWarsGarageObject()
+                -- Populate SlotsInIPL table with empty slot data
+                for i = 1, maxVehicles do
+                    local position = vector3(polyzonePoints[1].x + (direction.x * spacing * (i - 1)),
+                                             polyzonePoints[1].y + (direction.y * spacing * (i - 1)),
+                                             polyzonePoints[1].z + (direction.z * spacing * (i - 1)))
+                    local isSlotFilled = (i == 1) and false or true
+                    table.insert(SlotsInIPL[name], { position = position, isSlotFilled = isSlotFilled })
+                end
+            else
+                -- Handle single vehicle slots
+                local vehicles = iplData.vehicles
+                if vehicles then
+                    SlotsCount[name] = #vehicles
+                    if not SlotsInIPL[name] then
+                        SlotsInIPL[name] = {}
+                    end
+                    for i, vehicle in ipairs(vehicles) do
+                        table.insert(SlotsInIPL[name], { position = vehicle.coords, isSlotFilled = false })
+                    end
+                end
+            end
+        else
+            print("No vehicles data found for IPL: " .. name)
+        end
+    end
+    return SlotsCount[name]
+end
 
-                -- Disable the exterior
-                DrugWarsGarage.Ipl.Exterior.Remove()
+-- Function to create vehicles in an IPL with margin distance
+function createVehiclesInIPL(name, ipl)
+    if data.debug then
+        local iplData = data.IPLS[ipl]
+        if iplData and iplData.vehicles then
+            local maxVehicles = iplData.vehicles.max
+            local heading = iplData.vehicles.heading
+            local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
+            local margin = iplData.vehicles.margin or 0
+            local distanceBetweenVehicles = iplData.vehicles.DistanceBetweenVehicles or 5.0
+            local isPolyzone = iplData.vehicles.poly ~= nil
 
-                -- Set the interior style
-                DrugWarsGarage.Style.Set(DrugWarsGarage.Style.industrial, false)
+            if isPolyzone then
+                -- Create the PolyZone and handle vehicle creation inside the PolyZone
+                local startPoint = vector3(polyzonePoints[1].x, polyzonePoints[1].y, polyzonePoints[1].z)
+                local endPoint = vector3(polyzonePoints[#polyzonePoints].x, polyzonePoints[#polyzonePoints].y, polyzonePoints[#polyzonePoints].z)
 
-                -- Set the color
-                DrugWarsGarage.Tint.SetColor(DrugWarsGarage.Tint.purple, false)
+                local direction = normalizeVector(endPoint - startPoint)
+                local totalDistance = vectorLength(endPoint - startPoint)
+                local spacing = totalDistance / (maxVehicles - 1)
 
-                RefreshInterior(DrugWarsGarage.interiorId)
-            end)
-        end,
-        vehicles = {
-            max = 4,
-            heading = 103.7544,
-            margin = 2.0,
-            DistanceBetweenVehicles = 5.0,
-            poly = {
-                points = {vec3(526.96997070312, -2636.1101074218, -49.0),
-                          vec3(523.29998779296, -2636.1799316406, -49.0),
-                          vec3(521.38000488282, -2608.4699707032, -49.0), vec3(528.0599975586, -2613.3400878906, -49.0)}
-            },
-            thickness = 4.0
-        },
-        coords = {
-            exit = vector3(130.0, -707.0, 242.0),
-            entrance = vector3(519.2477, -2618.788, -50.000)
-        }
-    }
-}
+                if distanceBetweenVehicles > 0 then
+                    spacing = distanceBetweenVehicles
+                end
 
-Data.DebugCar = 'adder'
-return Data
+                -- Create vehicles in the PolyZone
+                for i = 1, maxVehicles do
+                    local position = vector3(startPoint.x + direction.x * ((i - 1) * spacing),
+                                             startPoint.y + direction.y * ((i - 1) * spacing),
+                                             startPoint.z + direction.z * ((i - 1) * spacing))
+
+                    lib.requestModel(data.DebugCar, 2000)
+                    if i == maxVehicles then
+                        -- Skip spawning vehicle in the last slot for debugging purposes
+                        SlotsInIPL[name][i].isSlotFilled = false
+                    else
+                        local vehicle = CreateVehicle(data.DebugCar, position.x, position.y, position.z, heading, true, false)
+                        local vehicleTable = getVehiclesGlobalTable(name)
+                        table.insert(vehicleTable, { vehicle = vehicle, position = position })
+                        SlotsInIPL[name][i].isSlotFilled = true
+                    end
+                end
+            else
+                -- Handle single vehicle slot creation
+                local vehicles = iplData.vehicles
+                if vehicles then
+                    for i, vehicle in ipairs(vehicles) do
+                        local position = vehicle.coords
+                        lib.requestModel(data.DebugCar, 2000)
+                        local createdVehicle = CreateVehicle(data.DebugCar, position.x, position.y, position.z, vehicle.heading, true, false)
+                        local vehicleTable = getVehiclesGlobalTable(name)
+                        table.insert(vehicleTable, { vehicle = createdVehicle, position = position })
+                        SlotsInIPL[name][i].isSlotFilled = true
+                    end
+                end
+            end
+        else
+            print("Debug mode is disabled; no vehicles created.")
+        end
+    else
+        print("Debug mode is disabled; no vehicles created.")
+    end
+end
+
+-- Function to delete all vehicles in an IPL
+function deleteVehiclesInIPL(name)
+    if VehiclesInIPL[name] then
+        for _, v in ipairs(VehiclesInIPL[name]) do
+            if DoesEntityExist(v.vehicle) then
+                DeleteEntity(v.vehicle)
+            end
+        end
+        VehiclesInIPL[name] = {}
+    else
+        print("No vehicles found for IPL: " .. name)
+    end
+
+    if SlotsInIPL[name] then
+        for _, slot in pairs(SlotsInIPL[name]) do
+            slot.isSlotFilled = false
+        end
+    end
+end
+
+-- Function to update slot occupation status
+function updateSlotOccupation(name)
+    local slots = getSlotsInIPL(name)
+
+    if not slots then
+        print("No slots found for IPL: " .. name)
+        return
+    end
+
+    local vehicles = getVehiclesInIPL(name)
+    for i, slot in ipairs(slots) do
+        local isSlotFilled = false
+        for _, v in ipairs(vehicles) do
+            if vectorDistance(slot.position, v.position) < 1.0 then
+                isSlotFilled = true
+                break
+            end
+        end
+        slot.isSlotFilled = isSlotFilled
+    end
+end
+
+-- Monitor and update slot occupation
+Citizen.CreateThread(function()
+    while true do
+        for name, _ in pairs(SlotsInIPL) do
+            updateSlotOccupation(name) -- Update slot status
+        end
+        Citizen.Wait(1000)
+    end
+end)

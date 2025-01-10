@@ -45,33 +45,45 @@ function calculateSlotsInIPL(name, ipl)
     if not SlotsCount[name] then
         local iplData = data.IPLS[ipl]
         if iplData and iplData.vehicles then
-            local polyzonePoints = iplData.vehicles.poly.points
+            local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
             local maxVehicles = iplData.vehicles.max
-            local direction = normalizeVector(vector3(polyzonePoints[#polyzonePoints].x - polyzonePoints[1].x,
-                                                      polyzonePoints[#polyzonePoints].y - polyzonePoints[1].y,
-                                                      polyzonePoints[#polyzonePoints].z - polyzonePoints[1].z))
+            if polyzonePoints then
+                -- Handle PolyZone calculations
+                local direction = normalizeVector(vector3(polyzonePoints[#polyzonePoints].x - polyzonePoints[1].x,
+                                                          polyzonePoints[#polyzonePoints].y - polyzonePoints[1].y,
+                                                          polyzonePoints[#polyzonePoints].z - polyzonePoints[1].z))
+                local totalDistance = vectorLength(polyzonePoints[#polyzonePoints] - polyzonePoints[1])
+                local spacing = totalDistance / (maxVehicles - 1)
 
-            -- Calculate the total distance and spacing between vehicles
-            local totalDistance = vectorLength(polyzonePoints[#polyzonePoints] - polyzonePoints[1])
-            local spacing = totalDistance / (maxVehicles - 1)
+                -- Store the number of slots in SlotsCount
+                SlotsCount[name] = maxVehicles
+                print("Calculated slots for IPL " .. name .. ": " .. SlotsCount[name])
 
-            -- Store the number of slots in SlotsCount
-            SlotsCount[name] = maxVehicles
-            print("Calculated slots for IPL " .. name .. ": " .. SlotsCount[name])
+                -- Initialize SlotsInIPL[name] if it doesn't exist
+                if not SlotsInIPL[name] then
+                    SlotsInIPL[name] = {}
+                end
 
-            -- Initialize SlotsInIPL[name] if it doesn't exist
-            if not SlotsInIPL[name] then
-                SlotsInIPL[name] = {}
-            end
-
-            -- Populate SlotsInIPL table with empty slot data
-            for i = 1, maxVehicles do
-                local position = vector3(polyzonePoints[1].x + (direction.x * spacing * (i - 1)),
-                                         polyzonePoints[1].y + (direction.y * spacing * (i - 1)),
-                                         polyzonePoints[1].z + (direction.z * spacing * (i - 1)))
-                -- Ensure slot 1 is empty
-                local isSlotFilled = (i == 1) and false or true
-                table.insert(SlotsInIPL[name], { position = position, isSlotFilled = isSlotFilled })
+                -- Populate SlotsInIPL table with empty slot data
+                for i = 1, maxVehicles do
+                    local position = vector3(polyzonePoints[1].x + (direction.x * spacing * (i - 1)),
+                                             polyzonePoints[1].y + (direction.y * spacing * (i - 1)),
+                                             polyzonePoints[1].z + (direction.z * spacing * (i - 1)))
+                    local isSlotFilled = (i == 1) and false or true
+                    table.insert(SlotsInIPL[name], { position = position, isSlotFilled = isSlotFilled })
+                end
+            else
+                -- Handle single vehicle slot
+                local vehicles = iplData.vehicles
+                if vehicles then
+                    SlotsCount[name] = #vehicles
+                    if not SlotsInIPL[name] then
+                        SlotsInIPL[name] = {}
+                    end
+                    for i, vehicle in ipairs(vehicles) do
+                        table.insert(SlotsInIPL[name], { position = vehicle.coords, isSlotFilled = false })
+                    end
+                end
             end
         else
             print("No vehicles data found for IPL: " .. name)
@@ -80,7 +92,6 @@ function calculateSlotsInIPL(name, ipl)
     return SlotsCount[name]
 end
 
-
 -- Function to create vehicles in an IPL with margin distance
 function createVehiclesInIPL(name, ipl)
     if data.debug then
@@ -88,81 +99,51 @@ function createVehiclesInIPL(name, ipl)
         if iplData and iplData.vehicles then
             local maxVehicles = iplData.vehicles.max
             local heading = iplData.vehicles.heading
-            local polyzonePoints = iplData.vehicles.poly.points
+            local polyzonePoints = iplData.vehicles.poly and iplData.vehicles.poly.points
             local margin = iplData.vehicles.margin or 0
             local distanceBetweenVehicles = iplData.vehicles.DistanceBetweenVehicles or 5
 
-            if #polyzonePoints < 2 then
-                print("PolyZone must have at least two points to calculate vehicle positions.")
-                return
-            end
+            if polyzonePoints then
+                -- Create the PolyZone and handle vehicle creation inside the PolyZone
+                local startPoint = vector3(polyzonePoints[1].x, polyzonePoints[1].y, polyzonePoints[1].z)
+                local endPoint = vector3(polyzonePoints[#polyzonePoints].x, polyzonePoints[#polyzonePoints].y, polyzonePoints[#polyzonePoints].z)
 
-            -- Create the PolyZone
-            local polyZone = lib.zones.poly({
-                points = polyzonePoints,
-                thickness = 2,
-                debug = true,
-            })
+                local direction = normalizeVector(endPoint - startPoint)
+                local totalDistance = vectorLength(endPoint - startPoint)
+                local spacing = totalDistance / (maxVehicles - 1)
 
-            local startPoint = vector3(polyzonePoints[1].x, polyzonePoints[1].y, polyzonePoints[1].z)
-            local endPoint = vector3(polyzonePoints[#polyzonePoints].x, polyzonePoints[#polyzonePoints].y, polyzonePoints[#polyzonePoints].z)
-
-            local direction = normalizeVector(endPoint - startPoint)
-            local totalDistance = vectorLength(endPoint - startPoint)
-            local spacing = totalDistance / (maxVehicles - 1)
-
-            if distanceBetweenVehicles > 0 then
-                spacing = distanceBetweenVehicles
-            end
-
-            local marginOffset = vector3(direction.x * margin, direction.y * margin, direction.z * margin)
-            local marginStart = vector3(startPoint.x + marginOffset.x, startPoint.y + marginOffset.y, startPoint.z + marginOffset.z)
-            local marginEnd = vector3(endPoint.x - marginOffset.x, endPoint.y - marginOffset.y, endPoint.z - marginOffset.z)
-
-            -- Initialize SlotsInIPL[name] if it doesn't exist
-            if not SlotsInIPL[name] then
-                SlotsInIPL[name] = {}
-            end
-            for i = 1, maxVehicles do  -- Loop to maxVehicles, now including the dynamic last slot
-
-                local position = vector3(
-                    marginStart.x + direction.x * ((i - 1) * spacing),
-                    marginStart.y + direction.y * ((i - 1) * spacing),
-                    marginStart.z + direction.z * ((i - 1) * spacing)
-                )
-
-                local zOffset = 0.0
-                local groundFound, groundZ = GetGroundZFor_3dCoord(position.x, position.y, position.z + 10, false)
-                if groundFound then
-                    zOffset = groundZ - position.z
+                if distanceBetweenVehicles > 0 then
+                    spacing = distanceBetweenVehicles
                 end
-                position = vector3(position.x, position.y, position.z + zOffset)
-                lib.requestModel(data.DebugCar, 2000)
-                
-                -- Skip spawning vehicle in the last slot for debugging purposes
-                if i == maxVehicles then
-                    if not SlotsInIPL[name][i] then
-                        SlotsInIPL[name][i] = { position = position, isSlotFilled = false }
-                    end
-                    -- Do not spawn vehicle, set slot as empty
-                    SlotsInIPL[name][i].isSlotFilled = false
-                else
-                    local vehicle = CreateVehicle(data.DebugCar, position.x, position.y, position.z, heading, true, false)
 
-                    if vehicle then
-                        -- Insert the vehicle into the VehiclesInIPL global table
+                -- Create vehicles in the PolyZone
+                for i = 1, maxVehicles do
+                    local position = vector3(startPoint.x + direction.x * ((i - 1) * spacing),
+                                             startPoint.y + direction.y * ((i - 1) * spacing),
+                                             startPoint.z + direction.z * ((i - 1) * spacing))
+
+                    lib.requestModel(data.DebugCar, 2000)
+                    if i == maxVehicles then
+                        -- Skip spawning vehicle in the last slot for debugging purposes
+                        SlotsInIPL[name][i].isSlotFilled = false
+                    else
+                        local vehicle = CreateVehicle(data.DebugCar, position.x, position.y, position.z, heading, true, false)
                         local vehicleTable = getVehiclesGlobalTable(name)
                         table.insert(vehicleTable, { vehicle = vehicle, position = position })
-
-                        -- Ensure slot exists before marking as filled
-                        if not SlotsInIPL[name][i] then
-                            SlotsInIPL[name][i] = { position = position, isSlotFilled = false }
-                        end
-                        SlotsInIPL[name][i].isSlotFilled = true -- Mark slot as filled
-                    else
-                        if not SlotsInIPL[name][i] then
-                            SlotsInIPL[name][i] = { position = position, isSlotFilled = false }
-                        end
+                        SlotsInIPL[name][i].isSlotFilled = true
+                    end
+                end
+            else
+                -- Handle single vehicle slot creation
+                local vehicles = iplData.vehicles
+                if vehicles then
+                    for i, vehicle in ipairs(vehicles) do
+                        local position = vehicle.coords
+                        lib.requestModel(data.DebugCar, 2000)
+                        local createdVehicle = CreateVehicle(data.DebugCar, position.x, position.y, position.z, vehicle.heading, true, false)
+                        local vehicleTable = getVehiclesGlobalTable(name)
+                        table.insert(vehicleTable, { vehicle = createdVehicle, position = position })
+                        SlotsInIPL[name][i].isSlotFilled = true
                     end
                 end
             end
@@ -173,9 +154,6 @@ function createVehiclesInIPL(name, ipl)
         print("Debug mode is disabled; no vehicles created.")
     end
 end
-
-
-
 
 -- Function to delete all vehicles in an IPL
 function deleteVehiclesInIPL(name)
@@ -197,101 +175,6 @@ function deleteVehiclesInIPL(name)
     end
 end
 
--- Function to draw markers for empty slots
--- Function to draw markers for empty slots
-function drawEmptySlotsMarkers(name)
-    Citizen.CreateThread(function()
-        while not waitForVehiclesCreation(name, 5000) do -- Wait for vehicles to be created with a 5-second timeout
-            Citizen.Wait(100)
-        end
-
-        local slots = getEmptySlotsInIPL(name)
-
-        if slots then
-            for _, slot in ipairs(slots) do
-                -- Ensure the marker is drawn at the center of the slot
-                local markerPosition = vector3(slot.position.x - 2, slot.position.y, slot.position.z)
-
-                -- Adjust Z position to ensure the marker is on the ground (centered)
-                local groundFound, groundZ = GetGroundZFor_3dCoord(markerPosition.x, markerPosition.y, markerPosition.z + 10, false)
-                if groundFound then
-                    markerPosition = vector3(markerPosition.x, markerPosition.y, groundZ)
-                end
-
-                -- Draw the marker only for empty slots
-                local marker = lib.marker.new({
-                    type = 1,
-                    coords = markerPosition,  -- Adjusted marker position
-                    color = { r = 255, g = 0, b = 0, a = 20 },
-                })
-
-                while true do
-                    marker:draw()
-                    Citizen.Wait(1)
-                end
-            end
-        end
-    end)
-end
-
-
--- Function to get vehicles in an IPL
-function getVehiclesInIPL(name)
-    while not waitForVehiclesCreation(name, 5000) do
-        Citizen.Wait(100) -- wait for the data to be available
-    end
-    local vehicles = VehiclesInIPL[name] or {}
-    local sequentialVehicles = {}
-    for _, v in ipairs(vehicles) do
-        table.insert(sequentialVehicles, v)
-    end
-    return sequentialVehicles
-end
-
--- Function to get slots in an IPL
-function getSlotsInIPL(name)
-    while not SlotsInIPL[name] do
-        Citizen.Wait(100) -- wait for the data to be available
-    end
-
-    local slots = SlotsInIPL[name] or {}
-    local sequentialSlots = {}
-    for i = 1, #slots do
-        if slots[i] then
-            table.insert(sequentialSlots, slots[i])
-        end
-    end
-    return sequentialSlots
-end
-
--- Function to get empty slots in an IPL
-function getEmptySlotsInIPL(name)
-    repeat Wait(0) until SlotsInIPL[name]
-    local slots = getSlotsInIPL(name)
-    local emptySlots = {}
-
-
-    for _, slot in ipairs(slots) do
-        if not slot.isSlotFilled then
-            table.insert(emptySlots, slot)
-        end
-    end
-
-    return emptySlots
-end
-
--- Function to find an empty slot in an IPL
-function findEmptySlotInIPL(name)
-    local slots = getSlotsInIPL(name)
-
-    for i, slot in ipairs(slots) do
-        if not slot.isSlotFilled then
-            return i, slot
-        end
-    end
-    return nil, nil
-end
-
 -- Function to update slot occupation status
 function updateSlotOccupation(name)
     local slots = getSlotsInIPL(name)
@@ -305,12 +188,12 @@ function updateSlotOccupation(name)
     for i, slot in ipairs(slots) do
         local isSlotFilled = false
         for _, v in ipairs(vehicles) do
-            if vectorDistance(slot.position, v.position) < 1.0 then  -- Check within tolerance
+            if vectorDistance(slot.position, v.position) < 1.0 then
                 isSlotFilled = true
                 break
             end
         end
-        slot.isSlotFilled = isSlotFilled  -- Mark the slot as filled or available
+        slot.isSlotFilled = isSlotFilled
     end
 end
 
@@ -319,8 +202,7 @@ Citizen.CreateThread(function()
     while true do
         for name, _ in pairs(SlotsInIPL) do
             updateSlotOccupation(name) -- Update slot status
-            drawEmptySlotsMarkers(name) -- Draw empty slots
         end
-        Citizen.Wait(1000) -- Check every second
+        Citizen.Wait(1000)
     end
 end)
