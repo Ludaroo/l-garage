@@ -26,7 +26,7 @@ function startIPLCamera(ipl, vehicles)
     SetCamCoord(IPLCamera, cameracoords.x, cameracoords.y, cameracoords.z)
     PointCamAtCoord(IPLCamera, coords.x, coords.y, coords.z)
     SetCamActive(IPLCamera, true)
-    RenderScriptCams(true, false, 0, true, true)
+    RenderScriptCams(true, false, 1000, true, false)
     SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z)
 
     -- Get vehicles in the IPL
@@ -35,7 +35,7 @@ function startIPLCamera(ipl, vehicles)
     -- Show the ped at the first position
     if #vehiclesInIPL > 0 then
         currentVehicleIndex = 1
-        focusOnVehicle(vehiclesInIPL[currentVehicleIndex])
+        focusOnVehicle(vehiclesInIPL[currentVehicleIndex].vehicle)
     else
         print("No vehicles found in IPL: " .. ipl)
     end
@@ -46,7 +46,7 @@ function startIPLCamera(ipl, vehicles)
     -- Draw instructions above the vehicles
     drawInstructions()
 
-    -- Show the instructional button and handle keypresses
+    -- Handle keypresses
     CreateThread(function()
         while IPLCamera do
             Wait(0)
@@ -59,17 +59,9 @@ function startIPLCamera(ipl, vehicles)
             if isCameraActive then
                 -- Navigate vehicles only if the camera is active
                 if IsControlJustPressed(0, 174) then -- Left Arrow
-                    currentVehicleIndex = currentVehicleIndex - 1
-                    if currentVehicleIndex < 1 then
-                        currentVehicleIndex = #vehiclesInIPL
-                    end
-                    focusOnVehicle(vehiclesInIPL[currentVehicleIndex])
+                    navigateVehicles(-1)
                 elseif IsControlJustPressed(0, 175) then -- Right Arrow
-                    currentVehicleIndex = currentVehicleIndex + 1
-                    if currentVehicleIndex > #vehiclesInIPL then
-                        currentVehicleIndex = 1
-                    end
-                    focusOnVehicle(vehiclesInIPL[currentVehicleIndex])
+                    navigateVehicles(1)
                 end
             end
 
@@ -84,7 +76,7 @@ end
 function endIPLCamera()
     if IPLCamera then
         SetCamActive(IPLCamera, false)
-        RenderScriptCams(false, false, 0, true, true)
+        RenderScriptCams(false, false, 1000, true, false)
         DestroyCam(IPLCamera, true)
         IPLCamera = nil
         vehiclesInIPL = {}
@@ -101,80 +93,88 @@ function toggleCamera()
         isCameraActive = not isCameraActive
         if isCameraActive then
             SetCamActive(IPLCamera, true)
-            RenderScriptCams(true, false, 0, true, true)
+            RenderScriptCams(true, false, 1000, true, false)
         else
             SetCamActive(IPLCamera, false)
-            RenderScriptCams(false, false, 0, true, true)
+            RenderScriptCams(false, false, 1000, true, false)
         end
     end
 end
 
+function navigateVehicles(direction)
+    currentVehicleIndex = currentVehicleIndex + direction
+    if currentVehicleIndex < 1 then
+        currentVehicleIndex = #vehiclesInIPL
+    elseif currentVehicleIndex > #vehiclesInIPL then
+        currentVehicleIndex = 1
+    end
+    focusOnVehicle(vehiclesInIPL[currentVehicleIndex])
+end
+
 function focusOnVehicle(vehicle)
     local vehicleCoords = GetEntityCoords(vehicle)
-    local cameraOffset = vector3(0, -5, 2) -- Adjust camera offset as needed
+    local minDim, maxDim = GetModelDimensions(GetEntityModel(vehicle))
+    local vehicleHeight = maxDim.z - minDim.z
+
+    -- Camera offset dynamically adjusts based on vehicle size
+    local cameraOffset = vector3(0, -5.0, vehicleHeight + 1.5)
     local cameraPosition = vehicleCoords + cameraOffset
 
-    -- Adjust camera position and point at the vehicle
-    SetCamCoord(IPLCamera, cameraPosition.x, cameraPosition.y, cameraPosition.z)
-    PointCamAtEntity(IPLCamera, vehicle)
+    -- Smooth transition for camera
+    local duration = 1000 -- in ms
+    smoothTransition(IPLCamera, cameraPosition, vehicleCoords)
+
+    -- Highlight the vehicle (optional)
+    SetVehicleLights(vehicle, 2) -- Turn on full lights for visibility
+    CreateThread(function()
+        Wait(1000)
+        SetVehicleLights(vehicle, 0)
+    end)
+end
+
+function smoothTransition(cam, toPosition, lookAtPosition)
+    local startTime = GetGameTimer()
+    local fromPosition = GetCamCoord(cam)
+    local duration = 1000
+
+    while GetGameTimer() - startTime < duration do
+        Wait(0)
+        local progress = (GetGameTimer() - startTime) / duration
+        local interpolated = fromPosition + (toPosition - fromPosition) * progress
+        SetCamCoord(cam, interpolated.x, interpolated.y, interpolated.z)
+        PointCamAtCoord(cam, lookAtPosition.x, lookAtPosition.y, lookAtPosition.z)
+    end
 end
 
 function getCameraSpace(coords)
     -- Raycast to find a suitable camera space
-    local raycast = StartShapeTestRay(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 1, PlayerPedId(), 0)
+    local raycast = StartShapeTestRay(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z + 100, 1, PlayerPedId(), 0)
     local _, hit, endCoords = GetShapeTestResult(raycast)
     if hit then
         return endCoords
     end
-    return coords
+    return coords + vector3(0, 0, 5.0)
 end
 
 -- Disable/Enable all controls
 function disableControls(disable)
+    controlsDisabled = disable
+    DisplayRadar(not disable)
     if disable then
-        DisplayRadar(false)
         DisableAllControlActions(0)
         EnableControlAction(0, 174, true) -- Left Arrow
         EnableControlAction(0, 175, true) -- Right Arrow
         EnableControlAction(0, 176, true) -- Enter
         EnableControlAction(0, 74, true)  -- H key
-     
-    else
-        
     end
 end
 
--- Draw instructions above the vehicles (empty for now)
+-- Draw instructions above the vehicles (placeholder for now)
 function drawInstructions()
-    -- This function can be used to draw something above vehicles in future.
+    -- Add logic to draw above vehicles dynamically if needed.
 end
-
--- Show instructional button
-function showInstructionalButton()
-    local scaleform = RequestScaleformMovie("INSTRUCTIONAL_BUTTONS")
-    while not HasScaleformMovieLoaded(scaleform) do
-        Wait(0)
-    end
-
-    BeginScaleformMovieMethod(scaleform, "CLEAR_ALL")
-    EndScaleformMovieMethod()
-
-    BeginScaleformMovieMethod(scaleform, "SET_DATA_SLOT")
-    ScaleformMovieMethodAddParamPlayerNameString("Left/Right to move cars")
-    ScaleformMovieMethodAddParamPlayerNameString("Enter to select a car")
-    ScaleformMovieMethodAddParamPlayerNameString("H to disable camera")
-    EndScaleformMovieMethod()
-
-    BeginScaleformMovieMethod(scaleform, "DRAW_INSTRUCTIONAL_BUTTONS")
-    EndScaleformMovieMethod()
-
-    DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
-end
-
--- Call this function to show the instructional button
-showInstructionalButton()
 
 function selectVehicle(vehicle)
-    -- You can add logic here for what happens when a vehicle is selected.
-    print("Vehicle selected: " .. vehicle)
+    -- Logic when a vehicle is selected
+    print("Vehicle selected: " .. tostring(vehicle))
 end

@@ -27,7 +27,7 @@ vehicles = createVehiclesInIPL("eclipseboulevard", "eclipseboulevard")
 
 
     DoScreenFadeIn(1000)
-    startIPLCamera("eclipseboulevard", vehicles)
+    --startIPLCamera("eclipseboulevard", vehicles)
 
 end
 
